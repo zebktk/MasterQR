@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Master QR - Aurangzeb Digital Agency</title>
+    
+    <!-- QR Generator & Scanner Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #0d0f1a; --card: #161a2e; --fg: #eef1ff; --muted: #8b93b8;
+            --brand: #6c5ce7; --brand2: #00d1b2; --gold: #f5b400; --border: #242a4a;
+        }
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--fg); padding-bottom: 70px; }
+        
+        /* Header */
+        header { padding: 15px; background: linear-gradient(135deg, #141932, #1b1240); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+        .logo { width: 35px; height: 35px; border-radius: 8px; background: linear-gradient(135deg, var(--brand), var(--brand2)); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        header h1 { font-size: 16px; margin: 0; flex: 1; line-height: 1.2; }
+        header h1 small { display: block; font-size: 10px; color: var(--muted); font-weight: normal; }
+        
+        /* Tabs */
+        .tabs { display: flex; overflow-x: auto; background: #11152a; border-bottom: 1px solid var(--border); padding: 10px; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tabs button { background: transparent; border: 0; color: var(--muted); padding: 8px 15px; border-radius: 8px; font-size: 13px; white-space: nowrap; }
+        .tabs button.active { background: var(--brand); color: white; font-weight: bold; }
+        
+        /* Main Content */
+        main { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .tab-pane { display: none; animation: fadeIn 0.3s; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Cards & Inputs */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 5px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #0f1220; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 14px; margin-bottom: 10px; }
+        button.btn { width: 100%; padding: 14px; background: var(--brand); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; margin-top: 10px; }
+        button.btn.ghost { background: transparent; border: 1px solid var(--border); }
+        button.btn.gold { background: var(--gold); color: black; }
+        
+        /* QR Preview */
+        #qr-preview { background: white; padding: 20px; border-radius: 12px; display: flex; justify-content: center; align-items: center; min-height: 250px; margin-bottom: 15px; }
+        
+        /* Scanner */
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        
+        /* Utilities */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--brand); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; }
+        .toast.show { opacity: 1; bottom: 80px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">MQR</div>
+    <h1>Master QR <small>by Aurangzeb Digital Agency</small></h1>
+</header>
+
+<div class="tabs">
+    <button class="active" onclick="switchTab('create', this)">Create</button>
+    <button onclick="switchTab('design', this)">Design</button>
+    <button onclick="switchTab('scan', this)">Scan</button>
+    <button onclick="switchTab('business', this)">Business</button>
+</div>
+
+<main>
+    <!-- CREATE TAB -->
+    <div id="tab-create" class="tab-pane active">
+        <div class="card">
+            <label>QR Type</label>
+            <select id="qr-type" onchange="buildForm()">
+                <option value="text">📝 Text</option>
+                <option value="url">🔗 URL</option>
+                <option value="phone">📞 Phone</option>
+                <option value="email">✉️ Email</option>
+                <option value="sms">💬 SMS</option>
+                <option value="wifi">📶 Wi-Fi</option>
+                <option value="vcard">👤 Contact (vCard)</option>
+            </select>
+            
+            <div id="dynamic-fields"></div>
+            
+            <button class="btn" onclick="generateQR()">⚡ Generate QR</button>
+            <button class="btn ghost" onclick="downloadQR()">⬇ Download PNG</button>
+        </div>
+        
+        <div id="qr-preview">
+            <div id="qr-target"></div>
+        </div>
+    </div>
+
+    <!-- DESIGN TAB -->
+    <div id="tab-design" class="tab-pane">
+        <div class="card">
+            <label>Foreground Color</label>
+            <input type="color" id="fg-color" value="#000000" style="height: 40px;" onchange="generateQR()">
+            
+            <label>Background Color</label>
+            <input type="color" id="bg-color" value="#ffffff" style="height: 40px;" onchange="generateQR()">
+            
+            <label>Dot Style</label>
+            <select id="dot-style" onchange="generateQR()">
+                <option value="rounded">Rounded</option>
+                <option value="square">Square</option>
+                <option value="dots">Dots</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- SCAN TAB -->
+    <div id="tab-scan" class="tab-pane">
+        <div class="card">
+            <button class="btn" onclick="startScanner()">📷 Start Camera</button>
+            <div id="reader" style="margin-top: 15px;"></div>
+        </div>
+        <div class="card">
+            <h3 style="margin-top:0">Scan Result</h3>
+            <p id="scan-result" style="word-break: break-all; color: var(--brand2);">---</p>
+        </div>
+    </div>
+
+    <!-- BUSINESS TAB -->
+    <div id="tab-business" class="tab-pane">
+        <div class="card">
+            <h3 style="margin-top:0">💎 Dynamic QR (Simulated)</h3>
+            <p style="font-size: 12px; color: var(--muted);">This works offline by saving your links locally to this device.</p>
+            <input type="text" id="dyn-dest" placeholder="Enter URL (https://...)">
+            <button class="btn gold" onclick="saveDynamic()">🔗 Create Dynamic QR</button>
+            <p id="dyn-result" style="font-size: 12px; margin-top: 10px;"></p>
+        </div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // --- UI Logic ---
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // --- Form Builder ---
+    const FORMS = {
+        text: `<label>Text</label><textarea id="f-text" placeholder="Enter text..."></textarea>`,
+        url: `<label>Website URL</label><input type="url" id="f-url" placeholder="https://...">`,
+        phone: `<label>Phone Number</label><input type="tel" id="f-phone" placeholder="+92...">`,
+        email: `<label>Email</label><input type="email" id="f-email" placeholder="hello@...">`,
+        sms: `<label>Phone</label><input type="tel" id="f-sms-phone"><label>Message</label><textarea id="f-sms-msg"></textarea>`,
+        wifi: `<label>Network Name</label><input type="text" id="f-wifi-ssid"><label>Password</label><input type="text" id="f-wifi-pass">`,
+        vcard: `<label>First Name</label><input type="text" id="f-v-fn"><label>Phone</label><input type="tel" id="f-v-phone"><label>Email</label><input type="email" id="f-v-email">`
+    };
+
+    function buildForm() {
+        const type = document.getElementById('qr-type').value;
+        document.getElementById('dynamic-fields').innerHTML = FORMS[type];
+    }
+
+    // --- QR Generation Engine ---
+    let qrCode = null;
+
+    function buildPayload() {
+        const type = document.getElementById('qr-type').value;
+        const val = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
+        
+        if (type === 'text') return val('f-text');
+        if (type === 'url') return val('f-url');
+        if (type === 'phone') return 'tel:' + val('f-phone');
+        if (type === 'email') return 'mailto:' + val('f-email');
+        if (type === 'sms') return `smsto:${val('f-sms-phone')}:${val('f-sms-msg')}`;
+        if (type === 'wifi') return `WIFI:T:WPA;S:${val('f-wifi-ssid')};P:${val('f-wifi-pass')};;`;
+        if (type === 'vcard') return `BEGIN:VCARD\nVERSION:3.0\nN:${val('f-v-fn')}\nTEL:${val('f-v-phone')}\nEMAIL:${val('f-v-email')}\nEND:VCARD`;
+        return "Master QR";
+    }
+
+    function generateQR() {
+        const data = buildPayload();
+        if (!data) { toast("Please enter some data"); return; }
+        
+        const fg = document.getElementById('fg-color').value;
+        const bg = document.getElementById('bg-color').value;
+        const dot = document.getElementById('dot-style').value;
+
+        document.getElementById('qr-target').innerHTML = '';
+        
+        qrCode = new QRCodeStyling({
+            width: 250,
+            height: 250,
+            data: data,
+            dotsOptions: { color: fg, type: dot },
+            backgroundOptions: { color: bg },
+            cornersSquareOptions: { type: "extra-rounded" }
+        });
+        
+        qrCode.append(document.getElementById('qr-target'));
+        toast("QR Generated!");
+    }
+
+    async function downloadQR() {
+        if (!qrCode) { toast("Generate a QR first"); return; }
+        const blob = await qrCode.getRawData("png");
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "MasterQR.png";
+        a.click();
+        toast("Downloaded!");
+    }
+
+    // --- Scanner Engine ---
+    let html5QrCode = null;
+
+    function startScanner() {
+        if (html5QrCode) { toast("Scanner already running"); return; }
+        html5QrCode = new Html5Qrcode("reader");
+        
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                document.getElementById('scan-result').innerText = decodedText;
+                toast("QR Scanned!");
+                // Optional: Auto-open URLs
+                if(decodedText.startsWith('http')) window.open(decodedText, '_blank');
+            },
+            (error) => { /* ignore frame errors */ }
+        ).catch(err => {
+            toast("Camera error: " + err);
+        });
+    }
+
+    // --- Dynamic QR (Local Mock) ---
+    function saveDynamic() {
+        const url = document.getElementById('dyn-dest').value;
+        if (!url) { toast("Enter a URL"); return; }
+        // In a real app this would call a server. Here we just mock it.
+        const fakeSlug = Math.random().toString(36).substring(7);
+        document.getElementById('dyn-result').innerHTML = `✅ Dynamic QR saved locally!<br>Mock Link: master.qr/${fakeSlug}`;
+        toast("Dynamic QR Saved");
+    }
+
+    // Initialize
+    buildForm();
+    generateQR();
+</script>
+
+</body>
+</html>
